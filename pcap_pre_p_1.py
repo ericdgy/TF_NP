@@ -11,6 +11,7 @@ import hashlib
 import dpkt
 import numpy as np
 
+
 class PcapProcessor:
     def __init__(self, N, p):
         """
@@ -60,7 +61,8 @@ class PcapProcessor:
                     ip = eth.data
                     pkt_hash = self.create_hash(ip)
                     # 检查数据包的五元组哈希是否在Netflow数据中，并且数据包的协议是否为TCP或UDP
-                    if pkt_hash in self.N_hash and (isinstance(ip.data, dpkt.tcp.TCP) or isinstance(ip.data, dpkt.udp.UDP)):
+                    if pkt_hash in self.N_hash and (
+                            isinstance(ip.data, dpkt.tcp.TCP) or isinstance(ip.data, dpkt.udp.UDP)):
                         fst, fet, label = self.N_hash[pkt_hash]
                         # 检查数据包的时间戳是否在流的开始和结束时间之间
                         if fst <= timestamp <= fet:
@@ -71,8 +73,9 @@ class PcapProcessor:
                             else:
                                 payload = payload[:1500]
                             # 添加标签和有效负载数据到结果列表
-                            X.append((label, np.array([byte/255 for byte in payload])))
+                            X.append((label, np.array([byte / 255 for byte in payload])))
         return X
+
 
 # 使用示例
 N = [...]  # Netflow 数据
