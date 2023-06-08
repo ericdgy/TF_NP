@@ -2,9 +2,11 @@ import hashlib
 import dpkt
 import numpy as np
 
+
 def create_hash(pkt):
     header_5_tuple = (pkt.src, pkt.dst, pkt.sport, pkt.dport, pkt.protocol)
     return hashlib.sha256(str(header_5_tuple).encode()).hexdigest()
+
 
 def process_pcap(file_name, N_hash):
     X = []
@@ -23,8 +25,9 @@ def process_pcap(file_name, N_hash):
                             payload += b'\x00' * (1500 - len(payload))
                         else:
                             payload = payload[:1500]
-                        X.append((label, np.array([byte/255 for byte in payload])))
+                        X.append((label, np.array([byte / 255 for byte in payload])))
     return X
+
 
 def main(N, p):
     N_hash = {}
@@ -33,6 +36,7 @@ def main(N, p):
         N_hash[fhash] = (f['start_time'], f['end_time'], f['label'])
     X = process_pcap(p, N_hash)
     return X
+
 
 # 使用示例
 N = [...]  # Netflow 数据
