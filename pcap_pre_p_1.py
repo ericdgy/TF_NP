@@ -1,12 +1,9 @@
-import hashlib
-import dpkt
-import numpy as np
-
 '''
 在这个类中，构造函数接收 Netflow 数据和 PCAP 文件路径作为参数，
 并在内部调用 _generate_hash_dict 方法来生成字典 N_hash。
 然后，process_pcap 方法处理 PCAP 文件，其他部分的代码逻辑保持不变
 '''
+
 import hashlib
 import dpkt
 import numpy as np
