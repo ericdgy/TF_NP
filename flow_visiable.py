@@ -26,7 +26,10 @@ df = df.set_index('Timestamp')
 # 可以选择进行重采样，比如按分钟，小时，等等
 df = df.resample('1min').sum()
 df['Traffic']=df['Traffic'] / (1024 * 1024)
+
+# 图长15，高5
 fig, ax = plt.subplots(figsize=(15,5))
+
 # 画图
 plt.plot(df.index, df['Traffic'])
 plt.title('Traffic over Time')
