@@ -8,7 +8,7 @@ Network performance prediction, Transfer Learning
 平均绝对百分比误差(MAPE): 0.023309320211410522
 ![uk_lstm.png](3_training%2Fuk_lstm.png)
 # Transformer
-只使用 Transformer 的 Encoder 部分 
+只使用 Transformer 的 Encoder 部分  
 50 epoch  
 根均方误差(RMSE): 169.33193969726562  
 平均绝对百分比误差(MAPE): 0.030823806300759315
