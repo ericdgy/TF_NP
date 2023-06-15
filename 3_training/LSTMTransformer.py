@@ -98,29 +98,26 @@ for epoch in range(num_epochs):
 # Switch to evaluation mode
 lstm_transformer.eval()
 with torch.no_grad():
-    y_train_pred = lstm_transformer(X_train.view(X_train.size(0), -1, 1))
-    y_test_pred = lstm_transformer(X_test.view(X_test.size(0), -1, 1))
+    X_test = X_test.view(-1, sequence_len, 1).to(device)
+    Y_predict = lstm_transformer(X_test).squeeze().cpu()
+    Y_predict_real = stand_scaler.inverse_transform(Y_predict.detach().numpy().reshape(-1, 1))
+    Y_test_real = stand_scaler.inverse_transform(Y_test.cpu().numpy().reshape(-1, 1))
 
 # Plot
+# Plot
 plt.figure(figsize=(20, 2))
-plt.plot(Y_test.cpu().numpy(), label='True')
-plt.plot(y_test_pred.view(-1).cpu().numpy(), label='Predicted')
+plt.plot(Y_test_real, label='True')
+plt.plot(Y_predict_real, label='Predicted')
 plt.legend()
 plt.show()
 
 # Calculation of RMSE and MAPE
-def RMSE(y_true, y_pred):
-    return np.sqrt(((y_pred - y_true) ** 2).mean())
+def MAPE(true, pred):
+    diff = np.abs(np.array(true) - np.array(pred))
+    return np.mean(diff / true)
 
-def MAPE(y_true, y_pred):
-    return np.mean(np.abs((y_true - y_pred) / (y_true + 1e-10))) * 100
+def RMSE(predictions, targets):
+    return np.sqrt(((predictions - targets) ** 2).mean())
 
-train_rmse = RMSE(Y_train.cpu().numpy(), y_train_pred.view(-1).cpu().numpy())
-test_rmse = RMSE(Y_test.cpu().numpy(), y_test_pred.view(-1).cpu().numpy())
-
-train_mape = MAPE(Y_train.cpu().numpy(), y_train_pred.view(-1).cpu().numpy())
-test_mape = MAPE(Y_test.cpu().numpy(), y_test_pred.view(-1).cpu().numpy())
-
-print(f'Train RMSE: {train_rmse:.4f}, Test RMSE: {test_rmse:.4f}')
-print(f'Train MAPE: {train_mape:.4f}, Test MAPE: {test_mape:.4f}')
-
+print(f"Root Mean Squared Error (RMSE): {RMSE(Y_predict_real, Y_test_real)}")
+print(f"Mean Absolute Percentage Error (MAPE): {MAPE(Y_predict_real, Y_test_real)}")
