@@ -1,55 +1,126 @@
+import numpy as np
 import torch
-from torch import nn
-from torch.nn import TransformerEncoder, TransformerEncoderLayer
+import torch.nn as nn
+import torch.optim as optim
 from torch.utils.data import DataLoader, TensorDataset
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.model_selection import train_test_split
+import matplotlib.pyplot as plt
 
+# Set the seed
+my_seed = 2023
+torch.manual_seed(my_seed)
+np.random.seed(my_seed)
 
-class LSTMTransformer(nn.Module):
-    def __init__(self, input_dim, lstm_units, num_layers, num_heads, dff, dropout=0.1):
-        super(LSTMTransformer, self).__init__()
-        self.lstm = nn.LSTM(input_dim, lstm_units, batch_first=True)
-        encoder_layers = TransformerEncoderLayer(lstm_units, num_heads, dff, dropout)
-        self.transformer_encoder = TransformerEncoder(encoder_layers, num_layers)
-        self.linear = nn.Linear(lstm_units, 1)  # 预测的流量值只有一个
+# Check if GPU is available
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+# Load data
+all_data = np.fromfile("uk_data")
+stand_scaler = MinMaxScaler()
+all_data = stand_scaler.fit_transform(all_data.reshape(-1, 1))
+
+sequence_len = 10
+X = []
+Y = []
+for i in range(len(all_data) - sequence_len - 1):
+    X.append(all_data[i:i + sequence_len])
+    Y.append(all_data[i + sequence_len])
+X = np.array(X)
+Y = np.array(Y)
+
+# Split the data into train and test sets
+X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2)
+
+# Convert the data to PyTorch tensors and move to GPU
+X_train = torch.tensor(X_train, dtype=torch.float32).to(device)
+X_test = torch.tensor(X_test, dtype=torch.float32).to(device)
+Y_train = torch.tensor(Y_train, dtype=torch.float32).to(device)
+Y_test = torch.tensor(Y_test, dtype=torch.float32).to(device)
+
+class LSTMTransformerModel(nn.Module):
+    def __init__(self):
+        super(LSTMTransformerModel, self).__init__()
+        self.lstm = nn.LSTM(input_size=1, hidden_size=100, num_layers=3, batch_first=True)
+        encoder_layer = nn.TransformerEncoderLayer(d_model=100, nhead=5)
+        self.transformer_encoder = nn.TransformerEncoder(encoder_layer, num_layers=3)
+        self.fc = nn.Linear(100, 1)
 
     def forward(self, x):
         x, _ = self.lstm(x)
-        x = x.transpose(0, 1)  # 将LSTM输出reshape为适合Transformer输入的形式
         x = self.transformer_encoder(x)
-        x = self.linear(x[-1])
+        x = self.fc(x[:, -1, :])
         return x
 
+# Create the model and move to GPU
+lstm_transformer = LSTMTransformerModel().to(device)
 
-# 实例化模型
-model = LSTMTransformer(input_dim=1, lstm_units=512, num_layers=2, num_heads=8, dff=2048)
+# Define the loss function and optimizer
+criterion = nn.MSELoss()
+optimizer = optim.Adam(lstm_transformer.parameters(), lr=0.01)
+scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=30, gamma=0.1)
 
-# 设置优化器和损失函数
-optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=0.01)  # L2正则化（权重衰减）
-criterion = nn.MSELoss()  # 使用MSE作为损失函数
+# Training loop
+lstm_transformer.train()  # Switch to training mode
+num_epochs = 100
+batch_size = 32
+patience = 10  # early stopping patience; how long to wait after last time validation loss improved.
+best_loss = np.inf
+stop_counter = 0
 
-# 定义L1正则化
-l1_lambda = 0.01
+train_dataset = TensorDataset(X_train, Y_train)
+train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 
-# 设定训练轮数
-num_epochs = 50
-
-# 假设你的输入数据在X中，目标数据在y中
-dataset = TensorDataset(X, y)
-
-# 创建数据加载器，设定批量大小为32，并在每个epoch之后打乱数据
-dataloader = DataLoader(dataset, batch_size=32, shuffle=True)
-
-# 训练模型
 for epoch in range(num_epochs):
-    for batch in dataloader:  # 假设dataloader是你的数据加载器
-        inputs, targets = batch
+    for i, (x_batch, y_batch) in enumerate(train_loader):
+        x_batch = x_batch.view(x_batch.size(0), -1, 1)
         optimizer.zero_grad()
-        outputs = model(inputs)
-        loss = criterion(outputs, targets)
-
-        # 添加L1正则化
-        l1_norm = sum(p.abs().sum() for p in model.parameters())
-        loss = loss + l1_lambda * l1_norm
-
+        output = lstm_transformer(x_batch)
+        loss = criterion(output.view(-1), y_batch.view(-1))
         loss.backward()
         optimizer.step()
+
+    scheduler.step()
+
+    if epoch % 10 == 0:
+        print(f'Epoch {epoch+1}/{num_epochs}, Loss: {loss.item()}')
+
+    # Check early stopping condition
+    if loss < best_loss:
+        best_loss = loss
+        stop_counter = 0
+    else:
+        stop_counter += 1
+    if stop_counter >= patience:
+        print("Early stopping!")
+        break
+
+# Switch to evaluation mode
+lstm_transformer.eval()
+with torch.no_grad():
+    y_train_pred = lstm_transformer(X_train.view(X_train.size(0), -1, 1))
+    y_test_pred = lstm_transformer(X_test.view(X_test.size(0), -1, 1))
+
+# Plot
+plt.figure(figsize=(20, 2))
+plt.plot(Y_test.cpu().numpy(), label='True')
+plt.plot(y_test_pred.view(-1).cpu().numpy(), label='Predicted')
+plt.legend()
+plt.show()
+
+# Calculation of RMSE and MAPE
+def RMSE(y_true, y_pred):
+    return np.sqrt(((y_pred - y_true) ** 2).mean())
+
+def MAPE(y_true, y_pred):
+    return np.mean(np.abs((y_true - y_pred) / (y_true + 1e-10))) * 100
+
+train_rmse = RMSE(Y_train.cpu().numpy(), y_train_pred.view(-1).cpu().numpy())
+test_rmse = RMSE(Y_test.cpu().numpy(), y_test_pred.view(-1).cpu().numpy())
+
+train_mape = MAPE(Y_train.cpu().numpy(), y_train_pred.view(-1).cpu().numpy())
+test_mape = MAPE(Y_test.cpu().numpy(), y_test_pred.view(-1).cpu().numpy())
+
+print(f'Train RMSE: {train_rmse:.4f}, Test RMSE: {test_rmse:.4f}')
+print(f'Train MAPE: {train_mape:.4f}, Test MAPE: {test_mape:.4f}')
+
