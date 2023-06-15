@@ -111,5 +111,5 @@ def MAPE(true, pred):
 def RMSE(predictions, targets):
     return np.sqrt(((predictions - targets) ** 2).mean())
 
-print(f"Root Mean Squared Error (RMSE): {RMSE(Y_predict_real, Y_test_real)}")
+print(f"Root Mean Squared Error (RMSE): {RMSE(Y_predict_real/(1024 * 1024), Y_test_real/(1024 * 1024))}")
 print(f"Mean Absolute Percentage Error (MAPE): {MAPE(Y_predict_real, Y_test_real)}")

@@ -1,3 +1,4 @@
+import pandas as pd
 import numpy as np
 import torch
 import torch.nn as nn
@@ -22,9 +23,9 @@ print(torch.cuda.is_available())
 torch.cuda.manual_seed(my_seed)
 
 # Load data
-all_data = np.fromfile("uk_data")
+data = pd.read_csv("isp.csv")
 stand_scaler = MinMaxScaler()
-all_data = stand_scaler.fit_transform(all_data.reshape(-1, 1))
+all_data = stand_scaler.fit_transform(data["Internet traffic data (in bits)"].values.reshape(-1, 1))
 
 sequence_len = 10
 X = []
@@ -99,9 +100,11 @@ with torch.no_grad():
 torch.save(lstm.state_dict(), 'uk_lstm_py.pth')
 
 # Plot the results
-fig = plt.figure(figsize=(20, 2))
-plt.plot(Y_predict_real, label='Predictions')
-plt.plot(Y_test_real, label='Actual')
+plt.figure(figsize=(20, 5))
+plt.plot(data["Time"].values[sequence_len:][:len(Y_test_real)], Y_test_real, label='Actual')
+plt.plot(data["Time"].values[sequence_len:][:len(Y_predict_real)], Y_predict_real, label='Predictions')
+plt.xlabel('Time')
+plt.ylabel('Internet Traffic')
 plt.legend()
 plt.show()
 
@@ -115,4 +118,5 @@ def RMSE(predictions, targets):
 
 print(f"根均方误差(RMSE): {RMSE(Y_predict_real / (1024 * 1024), Y_test_real / (1024 * 1024))}")
 print(f"平均绝对百分比误差(MAPE): {MAPE(Y_predict_real, Y_test_real)}")
+
 
