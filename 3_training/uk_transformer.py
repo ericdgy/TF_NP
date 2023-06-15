@@ -85,12 +85,13 @@ for epoch in range(num_epochs):
             print(f'Epoch {epoch+1}/{num_epochs}, Loss: {loss.item()}')
 
 # Make predictions on the test set
-transformer.train()
+transformer.eval()
 
-X_test = X_test.view(-1, sequence_len, 1).to(device)
-Y_predict = transformer(X_test).squeeze().cpu()
-Y_predict_real = stand_scaler.inverse_transform(Y_predict.squeeze().detach().numpy().reshape(-1, 1))
-Y_test_real = stand_scaler.inverse_transform(Y_test.cpu().numpy().reshape(-1, 1))
+with torch.no_grad():
+    X_test = X_test.view(-1, sequence_len, 1).to(device)
+    Y_predict = transformer(X_test).squeeze().cpu()
+    Y_predict_real = stand_scaler.inverse_transform(Y_predict.squeeze().detach().numpy().reshape(-1, 1))
+    Y_test_real = stand_scaler.inverse_transform(Y_test.cpu().numpy().reshape(-1, 1))
 
 # Save the model parameters
 torch.save(transformer.state_dict(), '../4_prediction/uk_transformer_py.pth')
