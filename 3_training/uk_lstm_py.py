@@ -99,8 +99,9 @@ torch.save(lstm.state_dict(), 'uk_lstm_py.pth')
 
 # Plot the results
 fig = plt.figure(figsize=(20, 2))
-plt.plot(Y_predict_real / (1024 * 1024))
-plt.plot(Y_test_real / (1024 * 1024))
+plt.plot(Y_predict_real, label='Predictions')
+plt.plot(Y_test_real, label='Actual')
+plt.legend()
 plt.show()
 
 # Evaluation metrics
