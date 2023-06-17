@@ -22,6 +22,22 @@ data = pd.read_csv("isp.csv")
 stand_scaler = MinMaxScaler()
 all_data = stand_scaler.fit_transform(data["Internet traffic data (in bits)"].values.reshape(-1, 1))
 
+# Smooth data using moving average
+window_size = 5
+smoothed_data = pd.Series(all_data.squeeze()).rolling(window=window_size).mean().fillna(0).values.reshape(-1, 1)
+
+# Normalize data using Min-Max scaler
+normalized_data = stand_scaler.fit_transform(smoothed_data)
+
+sequence_len = 10
+X = []
+Y = []
+for i in range(len(normalized_data) - sequence_len):
+    X.append(normalized_data[i:i + sequence_len])
+    Y.append(normalized_data[i + sequence_len])
+X = np.array(X)
+Y = np.array(Y)
+
 sequence_len = 10
 X = []
 Y = []
