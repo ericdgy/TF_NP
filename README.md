@@ -10,7 +10,7 @@ Network performance prediction, Transfer Learning
 # Transformer
 只使用 Transformer 的 Encoder 部分  
 50 epoch  
-根均方误差(RMSE): 0.0001601030546610923 
+根均方误差(RMSE): 0.0001601030546610923  
 平均绝对百分比误差(MAPE): 0.030823806300759315
 ![uk_transformer.png](3_training%2Fuk_transformer.png)
 # LSTM+Transformer
