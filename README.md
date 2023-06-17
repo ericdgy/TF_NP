@@ -16,3 +16,6 @@ Network performance prediction, Transfer Learning
 # LSTM+Transformer
 目前失败
 # LSTM+Self-Attention
+根均方误差(RMSE): 6.786046166866807e-09  
+平均绝对百分比误差(MAPE): 0.025098925456404686
+![LSTM_Self-attention.png](3_training%2FLSTM_Self-attention.png)
