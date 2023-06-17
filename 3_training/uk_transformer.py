@@ -1,3 +1,4 @@
+import pandas as pd
 import numpy as np
 import torch
 import torch.nn as nn
@@ -17,9 +18,9 @@ np.random.seed(my_seed)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Load data
-all_data = np.fromfile("uk_data")
+data = pd.read_csv("isp.csv")
 stand_scaler = MinMaxScaler()
-all_data = stand_scaler.fit_transform(all_data.reshape(-1, 1))
+all_data = stand_scaler.fit_transform(data["Internet traffic data (in bits)"].values.reshape(-1, 1))
 
 sequence_len = 10
 X = []
@@ -97,12 +98,14 @@ with torch.no_grad():
 torch.save(transformer.state_dict(), '../4_prediction/uk_transformer_py.pth')
 
 # Plot the results
-fig = plt.figure(figsize=(20, 2))
-plt.plot(Y_predict_real, label='Predictions')
-plt.plot(Y_test_real, label='Actual')
+plt.figure(figsize=(20, 5))
+x_ticks = range(sequence_len, sequence_len + len(Y_test_real))
+plt.plot(x_ticks, Y_test_real, label='Actual')
+plt.plot(x_ticks, Y_predict_real, label='Predictions')
+plt.xlabel('Data Point')
+plt.ylabel('Internet Traffic')
 plt.legend()
 plt.show()
-
 # Evaluation metrics
 def MAPE(true, pred):
     diff = np.abs(np.array(true) - np.array(pred))

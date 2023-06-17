@@ -23,7 +23,7 @@ print(torch.cuda.is_available())
 torch.cuda.manual_seed(my_seed)
 
 # Load data
-data = pd.read_csv("isp.csv")
+data = pd.read_csv("isp.csv", parse_dates=["Time"])
 stand_scaler = MinMaxScaler()
 all_data = stand_scaler.fit_transform(data["Internet traffic data (in bits)"].values.reshape(-1, 1))
 
@@ -101,12 +101,14 @@ torch.save(lstm.state_dict(), 'uk_lstm_py.pth')
 
 # Plot the results
 plt.figure(figsize=(20, 5))
-plt.plot(data["Time"].values[sequence_len:][:len(Y_test_real)], Y_test_real, label='Actual')
-plt.plot(data["Time"].values[sequence_len:][:len(Y_predict_real)], Y_predict_real, label='Predictions')
-plt.xlabel('Time')
+x_ticks = range(sequence_len, sequence_len + len(Y_test_real))
+plt.plot(x_ticks, Y_test_real, label='Actual')
+plt.plot(x_ticks, Y_predict_real, label='Predictions')
+plt.xlabel('Data Point')
 plt.ylabel('Internet Traffic')
 plt.legend()
 plt.show()
+
 
 # Evaluation metrics
 def MAPE(true, pred):
