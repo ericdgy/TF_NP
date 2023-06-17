@@ -8,6 +8,7 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
 from tqdm import tqdm
+import torch.nn.functional as F
 
 # Set the seed
 my_seed = 2023
@@ -52,18 +53,34 @@ Y_test = torch.tensor(Y_test, dtype=torch.float32).to(device)
 # Create DataLoader for training
 train_dataset = TensorDataset(X_train, Y_train)
 train_loader = DataLoader(train_dataset, batch_size=512, shuffle=True)
+class SelfAttention(nn.Module):
+    def __init__(self, input_dim):
+        super(SelfAttention, self).__init__()
+        self.query = nn.Linear(input_dim, input_dim)
+        self.key = nn.Linear(input_dim, input_dim)
+        self.value = nn.Linear(input_dim, input_dim)
 
-# Define the LSTM model using PyTorch
+    def forward(self, x):
+        q = self.query(x)
+        k = self.key(x)
+        v = self.value(x)
+        attn_weights = F.softmax(q @ k.transpose(-2, -1) / (k.shape[-1] ** 0.5), dim=-1)
+        output = attn_weights @ v
+        return output, attn_weights
+
+# Define the LSTM model using PyTorch with Self-Attention
 class LSTMModel(nn.Module):
     def __init__(self):
         super(LSTMModel, self).__init__()
         self.lstm1 = nn.LSTM(1, 512, batch_first=True)
+        self.self_attention = SelfAttention(512)
         self.lstm2 = nn.LSTM(512, 128, batch_first=True)
         self.fc = nn.Linear(128, 1)
         self.activation = nn.Sigmoid()
 
     def forward(self, x):
         x, _ = self.lstm1(x)
+        x, _ = self.self_attention(x)
         x, _ = self.lstm2(x[:, -1, :].unsqueeze(1))
         x = self.fc(x[:, -1, :])
         x = self.activation(x)

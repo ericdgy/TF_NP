@@ -14,8 +14,8 @@ Network performance prediction, Transfer Learning
 平均绝对百分比误差(MAPE): 0.030823806300759315
 ![uk_transformer.png](3_training%2Fuk_transformer.png)
 # LSTM+Transformer
-目前失败
+
 # LSTM+Self-Attention
-根均方误差(RMSE): 6.786046166866807e-09  
-平均绝对百分比误差(MAPE): 0.025098925456404686
+根均方误差(RMSE): 9.609785795465063e-09  
+平均绝对百分比误差(MAPE): 0.03314043954014778
 ![LSTM_Self-attention.png](3_training%2FLSTM_Self-attention.png)
